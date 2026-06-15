@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EEMI — Reboot Museum CPD Assistant</title>
+<style>
+:root {
+  --bg:#0d0d12; --s1:#161620; --s2:#1e1e2a; --s3:#26263a;
+  --b1:rgba(255,255,255,0.06); --b2:rgba(255,255,255,0.11); --b3:rgba(255,255,255,0.18);
+  --tx:#eeeef5; --mu:#7878a0; --mu2:#5a5a80;
+  --ac:#7c6ff7; --ac2:#a594ff; --ac3:rgba(124,111,247,0.15);
+  --red:#ff5c5c; --redb:rgba(255,92,92,0.13);
+  --amb:#ffb347; --ambb:rgba(255,179,71,0.13);
+  --grn:#4ecb71; --grnb:rgba(78,203,113,0.12);
+  --blu:#4da6ff; --blub:rgba(77,166,255,0.12);
+  --tel:#3dd9c2; --telb:rgba(61,217,194,0.12);
+  --pur:#c084fc; --purb:rgba(192,132,252,0.12);
+  --fn:'Inter',system-ui,sans-serif; --mo:'JetBrains Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;line-height:1.6;display:flex;flex-direction:column;}
+
+/* TOPBAR */
+.top{height:48px;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:10;}
+.logo{font-size:15px;font-weight:700;color:var(--ac2);letter-spacing:-.3px;}
+.logo span{color:var(--mu);font-weight:400;font-size:13px;}
+.dl-chip{margin-left:auto;display:flex;align-items:center;gap:5px;background:var(--redb);border:1px solid rgba(255,92,92,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--red);}
+.blink{width:6px;height:6px;border-radius:50%;background:var(--red);animation:bl 1.2s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sb{width:210px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.sb::-webkit-scrollbar{width:4px;} .sb::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.sg{padding:10px 10px 3px;font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--mu2);text-transform:uppercase;}
+.si{display:flex;align-items:center;gap:7px;padding:7px 10px;cursor:pointer;border-radius:6px;margin:1px 5px;color:var(--mu);transition:all .15s;font-size:12px;}
+.si:hover{background:var(--s2);color:var(--tx);}
+.si.on{background:var(--ac3);color:var(--ac2);font-weight:500;}
+.sd{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sba{margin-left:auto;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;}
+.brd{background:var(--redb);color:var(--red);}
+.bam{background:var(--ambb);color:var(--amb);}
+.bgr{background:var(--s3);color:var(--mu);}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.pn{display:none;flex:1;overflow-y:auto;padding:20px 24px 40px;}
+.pn.on{display:block;}
+.pn::-webkit-scrollbar{width:5px;} .pn::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+.cpn{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.cpn.on{display:flex;}
+
+/* SHARED COMPONENTS */
+.ptit{font-size:19px;font-weight:700;margin-bottom:4px;}
+.psub{font-size:12px;color:var(--mu);margin-bottom:20px;}
+.stit{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);margin:22px 0 10px;}
+.stit:first-child{margin-top:0;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;}
+.pill{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;}
+.elim-t{background:var(--redb);color:var(--red);}
+.ok-t{background:var(--grnb);color:var(--grn);}
+.oral-t{background:var(--blub);color:var(--blu);}
+
+/* PLANNING */
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-bottom:20px;}
+.dlc{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:14px 16px;border-left:3px solid;}
+.dlc.ur{border-left-color:var(--red);}
+.dlc.so{border-left-color:var(--amb);}
+.dlc.la{border-left-color:var(--tel);}
+.dlc.or{border-left-color:var(--blu);}
+.dl-tag{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;}
+.ur .dl-tag{color:var(--red);} .so .dl-tag{color:var(--amb);} .la .dl-tag{color:var(--tel);} .or .dl-tag{color:var(--blu);}
+.dl-n{font-size:26px;font-weight:800;line-height:1;}
+.ur .dl-n{color:var(--red);} .so .dl-n{color:var(--amb);} .la .dl-n{color:var(--tel);} .or .dl-n{color:var(--blu);}
+.dl-ti{font-size:13px;font-weight:600;margin:4px 0 2px;}
+.dl-da{font-size:11px;color:var(--mu);margin-bottom:8px;}
+.dl-su{font-size:11px;color:var(--mu2);}
+.dl-ul{list-style:none;margin-top:8px;border-top:1px solid var(--b1);padding-top:8px;}
+.dl-ul li{font-size:11px;color:var(--mu);padding:2px 0;display:flex;gap:5px;align-items:flex-start;}
+.dl-ul li::before{content:'›';opacity:.5;margin-top:0;}
+
+/* BLOC PANELS */
+.bh{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.bb{font-size:12px;font-weight:700;padding:5px 12px;border-radius:7px;}
+.btit{font-size:17px;font-weight:700;}
+.bsub{font-size:11px;color:var(--mu);margin-top:2px;}
+.intro-box{background:var(--s2);border-radius:9px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#bbb;line-height:1.7;border-left:3px solid var(--ac);}
+.cc{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.cc.el{border-left:3px solid var(--red);}
+.cc.nel{border-left:3px solid var(--s3);}
+.ch{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px;}
+.cco{font-family:var(--mo);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+.el .cco{background:var(--redb);color:var(--red);}
+.nel .cco{background:var(--s3);color:var(--mu);}
+.cn{font-size:12px;font-weight:600;line-height:1.4;}
+.cl{font-size:10px;color:var(--mu);margin-top:2px;font-style:italic;}
+.crit{margin-top:7px;}
+.ci{display:flex;align-items:flex-start;gap:7px;padding:4px 0;border-top:1px solid var(--b1);font-size:11px;color:#ccc;line-height:1.5;}
+.ci:first-child{border-top:none;padding-top:0;}
+.cdot{width:4px;height:4px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:6px;}
+.tip{background:rgba(124,111,247,.08);border:1px solid rgba(124,111,247,.18);border-radius:7px;padding:9px 11px;margin-top:9px;font-size:11px;color:#b0aed0;line-height:1.65;}
+.tip strong{color:var(--ac2);}
+.ds{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;}
+.dr{display:flex;gap:10px;margin-bottom:9px;}
+.dr:last-child{margin-bottom:0;}
+.dn{font-family:var(--mo);font-size:10px;color:var(--ac);font-weight:700;min-width:22px;margin-top:1px;}
+.dt{font-size:12px;color:var(--tx);line-height:1.5;flex:1;}
+.dt em{color:var(--mu);font-style:normal;font-size:11px;display:block;margin-top:2px;}
+
+/* COURS PANELS */
+.phase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;margin-bottom:24px;}
+.phc{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:0;overflow:hidden;}
+.ph-head{padding:12px 14px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;}
+.ph-num{font-family:var(--mo);font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;flex-shrink:0;}
+.ph-mat{font-size:12px;font-weight:600;}
+.ph-sub{font-size:10px;color:var(--mu);margin-top:1px;}
+.ph-body{padding:12px 14px;}
+.ph-obj{font-size:11px;color:var(--ac2);margin-bottom:8px;font-weight:500;}
+.ph-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;font-size:11px;color:var(--mu);}
+.ph-lbl{color:var(--mu2);font-size:10px;font-weight:600;min-width:60px;flex-shrink:0;margin-top:1px;}
+.ph-val{color:#ccc;line-height:1.5;flex:1;}
+.comp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.comp-chip{font-family:var(--mo);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;}
+.cc-bc1{background:var(--redb);color:var(--red);}
+.cc-bc2{background:var(--ambb);color:var(--amb);}
+.cc-bc5{background:var(--telb);color:var(--tel);}
+.ph-rsc{margin-top:8px;padding-top:8px;border-top:1px solid var(--b1);}
+.ph-rsc-t{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mu2);margin-bottom:4px;}
+.ph-rsc li{font-size:10px;color:var(--mu);list-style:none;padding:1px 0;display:flex;gap:4px;}
+.ph-rsc li::before{content:'→';opacity:.4;}
+
+/* CROSSREF TABLE */
+.xref{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:11px;}
+.xref th{background:var(--s2);padding:8px 10px;text-align:left;color:var(--mu2);font-weight:600;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--b2);}
+.xref td{padding:8px 10px;border-bottom:1px solid var(--b1);vertical-align:top;}
+.xref tr:last-child td{border-bottom:none;}
+.xref tr:hover td{background:var(--s2);}
+.xref .ph-name{font-weight:600;color:var(--tx);}
+.xref .mat{color:var(--ac2);font-size:10px;}
+
+/* CHAT */
+.cm{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;}
+.cm::-webkit-scrollbar{width:5px;} .cm::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+.msg{display:flex;gap:10px;max-width:800px;}
+.msg.u{flex-direction:row-reverse;align-self:flex-end;}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+.av.ai{background:rgba(124,111,247,.2);color:var(--ac2);}
+.av.me{background:rgba(255,179,71,.2);color:var(--amb);}
+.mb{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:10px 14px;font-size:12px;line-height:1.75;color:var(--tx);max-width:680px;}
+.msg.u .mb{background:rgba(124,111,247,.1);border-color:rgba(124,111,247,.2);}
+.cia{padding:12px 16px;border-top:1px solid var(--b1);background:var(--s1);display:flex;flex-direction:column;gap:8px;}
+.qrow{display:flex;flex-wrap:wrap;gap:5px;}
+.qb{background:var(--s2);border:1px solid var(--b2);border-radius:14px;padding:4px 10px;font-size:10px;color:var(--mu);cursor:pointer;transition:all .15s;}
+.qb:hover{border-color:var(--ac);color:var(--ac2);}
+.irow{display:flex;gap:8px;}
+.ci2{flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:9px;padding:9px 12px;color:var(--tx);font-size:12px;font-family:var(--fn);resize:none;min-height:38px;max-height:100px;outline:none;line-height:1.5;}
+.ci2:focus{border-color:var(--ac);}
+.ci2::placeholder{color:var(--mu);}
+.sb2{background:var(--ac);border:none;border-radius:8px;padding:9px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s;}
+.sb2:hover{background:var(--ac2);}
+.sb2:disabled{opacity:.4;cursor:not-allowed;}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--mu);animation:bo 1.2s infinite;display:inline-block;margin:0 1px;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes bo{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.mb strong{color:var(--ac2);}
+.mb em{color:var(--mu);}
+.mb ul{margin:5px 0 5px 16px;}
+.mb li{margin:2px 0;}
+
+/* ONBOARDING */
+.ob{position:fixed;inset:0;background:rgba(11,11,16,.97);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.ob-box{background:#161620;border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:36px 40px;max-width:460px;width:90%;text-align:center;}
+.ob-logo{font-size:26px;font-weight:800;color:#b0a4ff;letter-spacing:-.5px;margin-bottom:4px;}
+.ob-logo span{color:#7878a0;font-weight:400;font-size:15px;}
+.ob-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,92,92,.12);color:#ff5c5c;border-radius:20px;padding:3px 10px;margin:8px 0 18px;}
+.ob-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+.ob-desc{font-size:12px;color:#8080a8;line-height:1.75;margin-bottom:22px;}
+.ob-desc strong{color:#eeeef5;}
+.ob-inp{width:100%;background:#1a1a22;border:1px solid rgba(255,255,255,.11);border-radius:9px;padding:10px 14px;color:#eeeef5;font-size:13px;font-family:inherit;outline:none;margin-bottom:9px;transition:border-color .15s;}
+.ob-inp:focus{border-color:#7c6ff7;}
+.ob-inp::placeholder{color:#55557a;}
+.ob-btn{width:100%;background:#7c6ff7;border:none;border-radius:9px;padding:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
+.ob-btn:hover{background:#b0a4ff;}
+.ob-skip{font-size:11px;color:#55557a;cursor:pointer;margin-top:12px;display:block;text-decoration:underline;}
+/* USER CHIP */
+.user-chip{display:flex;align-items:center;gap:6px;background:#22222e;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:3px 10px;font-size:11px;color:#8080a8;cursor:pointer;}
+.user-dot{width:20px;height:20px;border-radius:50%;background:rgba(124,111,247,.14);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#b0a4ff;}
+/* CHAT DOMINANT */
+.ai-mb{border-left:2px solid #7c6ff7 !important;}
+
+
+.cours-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(78,203,113,.1);border:1px solid rgba(78,203,113,.2);border-radius:5px;padding:3px 8px;font-size:10px;color:#4ecb71;margin-top:6px;line-height:1.4;}
+.cours-tag strong{font-weight:700;}
+</style>
+</head>
+<body>
+
+<div class="ob" id="ob">
+  <div class="ob-box">
+    <div class="ob-logo">EEMI <span>Assistant</span></div>
+    <div class="ob-tag">🔴 BC1 + BC2 dans 4 jours — 19 juin 23h59</div>
+    <div class="ob-title">Bienvenue dans ton assistant Reboot Museum</div>
+    <div class="ob-desc">
+      Je connais <strong>toutes les grilles d'évaluation</strong> (BC1, BC2, BC5, BC3 REX), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, le <strong>cours exact où tu l'as vue</strong> et ce que tu dois produire.<br><br>
+      Entre ton prénom et ton mail pour que je me souvienne de toi entre les sessions.
+    </div>
+    <input class="ob-inp" id="ob-name" placeholder="Ton prénom" type="text" autocomplete="given-name" />
+    <input class="ob-inp" id="ob-email" placeholder="Ton adresse email (optionnel)" type="email" autocomplete="email" />
+    <button class="ob-btn" onclick="onboard()">Commencer →</button>
+    <span class="ob-skip" onclick="skipOnboard()">Passer cette étape</span>
+  </div>
+</div>
+
+
+<div class="top">
+  <div class="logo">EEMI <span>/ Reboot Museum — Chef de Projets Digitaux RNCP35541</span></div>
+  <div class="user-chip" id="user-chip" onclick="resetUser()" title="Cliquer pour modifier"><div class="user-dot" id="user-initial">?</div><span id="user-label">Utilisateur</span></div>
+  <div class="dl-chip"><div class="blink"></div>BC1 + BC2 : 4 jours — 19 juin 23h59</div>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sb">
+  <div class="sg">Planning</div>
+  <div class="si on" onclick="go(this,'pl')"><div class="sd" style="background:var(--ac)"></div>Vue d'ensemble</div>
+
+  <div class="sg">Blocs RNCP à rendre</div>
+  <div class="si" onclick="go(this,'b1')"><div class="sd" style="background:var(--red)"></div>Bloc 1 — Analyse<span class="sba brd">J-4</span></div>
+  <div class="si" onclick="go(this,'b2')"><div class="sd" style="background:var(--amb)"></div>Bloc 2 — Pilotage<span class="sba brd">J-4</span></div>
+  <div class="si" onclick="go(this,'b5')"><div class="sd" style="background:var(--tel)"></div>Bloc 5 — E-business<span class="sba bam">J-11</span></div>
+  <div class="si" onclick="go(this,'b3')"><div class="sd" style="background:var(--pur)"></div>Bloc 3 — REX<span class="sba bgr">J-46</span></div>
+
+  <div class="sg">Cours × Livrables</div>
+  <div class="si" onclick="go(this,'c1')"><div class="sd" style="background:var(--grn)"></div>Phase 1 — Brief strat.</div>
+  <div class="si" onclick="go(this,'c2')"><div class="sd" style="background:var(--grn)"></div>Phase 2 — Analyse marché</div>
+  <div class="si" onclick="go(this,'c3')"><div class="sd" style="background:var(--grn)"></div>Phase 3 — Activation</div>
+  <div class="si" onclick="go(this,'c4')"><div class="sd" style="background:var(--grn)"></div>Phase 4 — Site web</div>
+  <div class="si" onclick="go(this,'c5')"><div class="sd" style="background:var(--grn)"></div>Phase 5 — Conduite projet</div>
+  <div class="si" onclick="go(this,'c6')"><div class="sd" style="background:var(--grn)"></div>Phase 6 — Mobile mktg</div>
+  <div class="si" onclick="go(this,'c7')"><div class="sd" style="background:var(--grn)"></div>Phase 7 — Agile</div>
+  <div class="si" onclick="go(this,'c8')"><div class="sd" style="background:var(--grn)"></div>Phase 8 — Direction art.</div>
+  <div class="si" onclick="go(this,'c9')"><div class="sd" style="background:var(--grn)"></div>Phase 9 — Audiovisuel</div>
+  <div class="si" onclick="go(this,'c10')"><div class="sd" style="background:var(--grn)"></div>Phase 10 — Pitch</div>
+  <div class="si" onclick="go(this,'cx')"><div class="sd" style="background:var(--mu)"></div>Tableau croisé global</div>
+
+  <div class="sg">Assistant IA</div>
+  <div class="si on" onclick="go(this,'chat')"><div class="sd" style="background:var(--grn)"></div>Chat — Pose tes questions</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- PLANNING -->
+<div class="pn" id="pn-pl">
+  <div class="ptit">Planning des rendus — Titre CPD</div>
+  <div class="psub">Aujourd'hui : 15 juin 2026 · Projet fil rouge Reboot Museum · Bachelor 3 Marketing & Communication</div>
+  <div class="dl-grid">
+    <div class="dlc ur">
+      <div class="dl-tag">🔴 Urgent — Dossier écrit</div>
+      <div class="dl-n">4 jours</div>
+      <div class="dl-ti">Bloc 1 — Analyse & cadrage</div>
+      <div class="dl-da">19 juin 2026 avant 23h59 · DigiformaCertif</div>
+      <div class="dl-su">Rendu de groupe (3-6 étudiants) · Phases 2, 4, 5 du PFR</div>
+      <ul class="dl-ul">
+        <li>Note positionnement commanditaire (C1.1+C1.2)</li>
+        <li>Note définition besoins client (C1.5)</li>
+        <li>Cahier des charges fonctionnel & technique (C1.6)</li>
+        <li>Planning des actions & ressources (C1.7)</li>
+        <li>Cartographie des risques (C1.4)</li>
+      </ul>
+    </div>
+    <div class="dlc ur">
+      <div class="dl-tag">🔴 Urgent — Dossier écrit</div>
+      <div class="dl-n">4 jours</div>
+      <div class="dl-ti">Bloc 2 — Pilotage & gestion</div>
+      <div class="dl-da">19 juin 2026 avant 23h59 · DigiformaCertif</div>
+      <div class="dl-su">Rendu de groupe · Pas de soutenance orale · Phases 5, 7 du PFR</div>
+      <ul class="dl-ul">
+        <li>RACI + découpage en sprints (C2.1)</li>
+        <li>Plan ressources humaines & financières (C2.3)</li>
+        <li>Comptes-rendus de réunions (C2.4)</li>
+        <li>Retour d'expérience équipe (C2.5)</li>
+        <li>Budget prévisionnel (C2.2)</li>
+      </ul>
+    </div>
+    <div class="dlc or">
+      <div class="dl-tag">🔵 Oral BC1</div>
+      <div class="dl-n">23 jours</div>
+      <div class="dl-ti">Soutenance Bloc 1</div>
+      <div class="dl-da">8 juillet 2026 à 14h00</div>
+      <div class="dl-su">20 min présentation + 15 min Q&R · 2 professionnels</div>
+    </div>
+    <div class="dlc so">
+      <div class="dl-tag">🟡 Bientôt — Dossier écrit</div>
+      <div class="dl-n">11 jours</div>
+      <div class="dl-ti">Bloc 5 — Expérience client (E-business)</div>
+      <div class="dl-da">26 juin 2026 avant 23h59 · DigiformaCertif</div>
+      <div class="dl-su">Rendu INDIVIDUEL · Phases 1, 3, 6, 8, 9 du PFR</div>
+      <ul class="dl-ul">
+        <li>Benchmark & SWOT (C5.1) · Dashboard KPI (C5.2)</li>
+        <li>Brand content + rétro-planning (C5.3)</li>
+        <li>Plan marketing opérationnel (C5.4)</li>
+        <li>Analyse leviers digitaux (C5.6) · Personas (C5.7)</li>
+        <li>Campagne e-mailing (C5.8) · Analyse marque (C5.10)</li>
+      </ul>
+    </div>
+    <div class="dlc or">
+      <div class="dl-tag">🔵 Oral BC5</div>
+      <div class="dl-n">24 jours</div>
+      <div class="dl-ti">Soutenance Bloc 5</div>
+      <div class="dl-da">9 juillet 2026 à 16h00</div>
+      <div class="dl-su">20 min présentation + 10 min Q&R · 2 professionnels</div>
+    </div>
+    <div class="dlc la">
+      <div class="dl-tag">🟢 Plus tard</div>
+      <div class="dl-n">46 jours</div>
+      <div class="dl-ti">Bloc 3 — REX (expérience pro)</div>
+      <div class="dl-da">31 juillet 2026 avant 23h59 · DigiformaCertif</div>
+      <div class="dl-su">Individuel · PDF : REX3 NOM Prénom Classe.pdf · Soutenance date TBC</div>
+      <ul class="dl-ul">
+        <li>20-30 pages sur ton alternance/stage réel</li>
+        <li>Rapport (100 pts) + Soutenance (20 pts) = 120 pts</li>
+        <li>Validation BC3 : ≥84 pts · Bachelor : ≥60 pts</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="stit">Correspondance Phases PFR → Blocs RNCP à rendre</div>
+  <div class="card" style="overflow-x:auto;">
+    <table class="xref">
+      <thead><tr><th>Phase PFR</th><th>Matière (cours)</th><th>Livrables principaux</th><th>Compétences → Bloc RNCP</th></tr></thead>
+      <tbody>
+        <tr><td class="ph-name">Phase 1</td><td class="mat">Brief & Recommandations strat.</td><td>Reco. stratégique + CR brainstorming</td><td><span class="comp-chip cc-bc5">C1.5→BC1</span> <span class="comp-chip cc-bc5">C5.3→BC5</span> <span class="comp-chip cc-bc5">C5.9→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 2</td><td class="mat">Analyse de projets digitaux</td><td>Rapport analyse stratégique + PESTEL + benchmark</td><td><span class="comp-chip cc-bc1">C1.1→BC1</span> <span class="comp-chip cc-bc1">C1.2→BC1</span> <span class="comp-chip cc-bc5">C5.1→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 3</td><td class="mat">Activation client</td><td>Stratégie activation + plan marketing + personas + e-mailing</td><td><span class="comp-chip cc-bc5">C5.2→BC5</span> <span class="comp-chip cc-bc5">C5.4→BC5</span> <span class="comp-chip cc-bc5">C5.5→BC5</span> <span class="comp-chip cc-bc5">C5.7→BC5</span> <span class="comp-chip cc-bc5">C5.8→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 4</td><td class="mat">Création de site web (CMS)</td><td>Audit UX + cahier des charges + maquette Figma</td><td><span class="comp-chip cc-bc1">C1.6→BC1</span> <span class="comp-chip cc-bc5">C5.7→BC5</span> <span class="comp-chip cc-bc5">C5.10→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 5</td><td class="mat">Conduite de projets digitaux</td><td>Planning + RACI + budget + risques + ressources</td><td><span class="comp-chip cc-bc1">C1.4→BC1</span> <span class="comp-chip cc-bc1">C1.7→BC1</span> <span class="comp-chip cc-bc1">C1.9→BC1</span> <span class="comp-chip cc-bc2">C2.1→BC2</span> <span class="comp-chip cc-bc2">C2.2→BC2</span> <span class="comp-chip cc-bc2">C2.3→BC2</span></td></tr>
+        <tr><td class="ph-name">Phase 6</td><td class="mat">Mobile Marketing</td><td>Stratégie acquisition mobile + campagne push/SMS</td><td><span class="comp-chip cc-bc5">C5.4→BC5</span> <span class="comp-chip cc-bc5">C5.6→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 7</td><td class="mat">Méthodes & pratiques agiles</td><td>Kanban + Backlog + Rétrospective agile</td><td><span class="comp-chip cc-bc2">C2.4→BC2</span> <span class="comp-chip cc-bc2">C2.5→BC2</span></td></tr>
+        <tr><td class="ph-name">Phase 8</td><td class="mat">Direction Artistique / GenAI</td><td>Moodboard + charte graphique + templates visuels</td><td><span class="comp-chip cc-bc1">C1.6→BC1</span> <span class="comp-chip cc-bc5">C5.3→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 9</td><td class="mat">Production audiovisuelle</td><td>Script + storyboard + vidéo teaser</td><td><span class="comp-chip cc-bc5">C5.3→BC5</span></td></tr>
+        <tr><td class="ph-name">Phase 10</td><td class="mat">Communiquer pour convaincre</td><td>Pitch vidéo + soutenance orale</td><td><span class="comp-chip cc-bc1">C1.8→BC1 oral</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BC1 -->
+<div class="pn" id="pn-b1">
+  <div class="bh"><div class="bb" style="background:var(--redb);color:var(--red);">BC1</div><div><div class="btit">Analyse et cadrage d'un projet digital</div><div class="bsub">Dossier écrit 19 juin + Oral 8 juillet · Groupe · Phases PFR concernées : 2, 4, 5</div></div></div>
+  <div class="intro-box">Le jury évalue comment tu analyses l'environnement du Musée de la Ville et cadres le projet digital. Tout doit être <strong style="color:var(--tx)">appliqué concrètement à Reboot Museum</strong>. Les compétences marquées ÉLIM. sont obligatoires — une seule absente = bloc invalide.</div>
+  <div class="stit">Compétences — Grille officielle BC1</div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.1<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Analyser l'environnement interne et externe</div><div class="cl">Livrable grille : Note de positionnement du commanditaire · Cours : Phase 2 (Analyse de projets digitaux)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>L'analyse des tendances du marché est argumentée (avec données chiffrées)</div></div></div><div class="tip"><strong>Reboot Museum :</strong> PESTEL du secteur muséal en utilisant les données du brief (14M jeunes visiteurs 2022, +111%, seulement 35% des 30-44 ans vont au musée, 14% des 18-29 ans y vont plus de 3 fois/an). Analyse interne du musée : image vieillissante, site obsolète, équipe réduite, budget contraint. Forces/faiblesses/opportunités/menaces.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.2<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Veille concurrentielle, réputationnelle, juridique, technique, artistique</div><div class="cl">Livrable grille : Note de positionnement (même doc que C1.1) · Cours : Phase 2</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Une synthèse de la veille est réalisée présentant les informations collectées</div></div><div class="ci"><div class="cdot"></div><div>Des recommandations concrètes et adaptées au projet sont ajoutées au document de veille</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Benchmarkez Versailles (TikTok), Louvre (#LouvreALaLoupe), Musée Ariana (websérie), 1 musée territorial en difficulté. Veille tech : outils CMS culturels, RGPD, accessibilité WCAG. Veille réseaux : codes TikTok culture, Instagram Reels musées. Terminer par 3-4 recommandations concrètes.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.4<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Cartographie des risques du projet digital</div><div class="cl">Livrable grille : Cartographie des risques · Cours : Phase 5 (Conduite de projets digitaux)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Une analyse des risques autour du projet est présentée</div></div><div class="ci"><div class="cdot"></div><div>Des actions préventives sont préconisées pour chaque risque identifié</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Tableau Risque / Probabilité (H/M/F) / Impact / Action préventive. Risques types : budget insuffisant, résistance direction aux réseaux, contenu inadapté 18-35 ans, faible adoption nouveau site par les équipes, retards production vidéo, non-conformité RGPD, désintérêt public malgré refonte.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.5<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Identifier et interpréter les besoins du client</div><div class="cl">Livrable grille : Note de définition des besoins · Cours : Phase 1 (Brief et Recommandations stratégiques)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les besoins et attentes clients sont clairement identifiés</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Client = direction du Musée de la Ville. Reformulez le brief : Besoin principal (augmenter fréquentation 18-35 ans), Objectifs SMART (ex: +30% visiteurs jeunes en 2 ans), Contraintes (budget limité, équipe réduite, identité patrimoniale à préserver), Cibles (18-25 étudiants, 25-35 actifs urbains), Solution attendue (refonte site, réseaux, CRM, brand content).</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.6<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Cahier des charges fonctionnel et technique</div><div class="cl">Livrable grille : Cahier des charges du projet · Cours : Phase 4 (Création site web) + Phase 8 (DA)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Le cahier des charges comporte l'ensemble des spécifications fonctionnelles ET techniques nécessaires</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Structure : 1/ Contexte & enjeux 2/ Objectifs SMART 3/ Périmètre (site, réseaux, CRM, brand content, vidéo) 4/ Fonctionnalités du site (agenda expo, billetterie, visite virtuelle, newsletter) 5/ Contraintes techniques (CMS : WordPress/Webflow, hébergement RGPD, accessibilité WCAG, mobile-first) 6/ Contraintes contenu 7/ Livrables par phase 8/ Budget estimatif.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C1.7<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Planning des phases + évaluation des ressources</div><div class="cl">Livrable grille : Planning des actions + ressources + inventaire livrables · Cours : Phase 5</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Répartition des tâches et contributeurs cohérente au regard du temps et de la complexité</div></div><div class="ci"><div class="cdot"></div><div>Estimation des ressources cohérente au regard de la nature des tâches</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Gantt ou tableau sur les 10 phases (Oct 25 → Mai 26). Colonnes : Phase / Matière / Responsable dans l'équipe / Dates / Durée estimée / Livrables produits. Inventaire de tous les livrables du projet en annexe.</div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C1.8<span class="pill oral-t" style="margin-left:5px;font-size:9px;">Oral 8 juillet</span></div><div><div class="cn">Argumenter et négocier les propositions techniques à l'oral</div><div class="cl">Évalué UNIQUEMENT à la soutenance du 8 juillet — pas dans le dossier du 19 juin</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Le projet est exposé de manière claire et persuasive</div></div><div class="ci"><div class="cdot"></div><div>Les choix techniques sont argumentés devant le jury</div></div></div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C1.9<span class="pill ok-t" style="margin-left:5px;font-size:9px;">Non élim.</span></div><div><div class="cn">Auditer un projet digital et proposer des axes d'amélioration</div><div class="cl">Livrable grille : CR d'audit d'un prototype · Cours : Phase 5</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Analyse rigoureuse et objective</div></div><div class="ci"><div class="cdot"></div><div>Recommandations concrètes et adaptées au projet</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Auditez le site d'un vrai musée territorial. Critères : UX/navigation, SEO on-page (balises, vitesse), présence réseaux sociaux, accessibilité, RGPD, mobile. Puis listez vos recommandations pour le Musée de la Ville fictif.</div></div>
+  <div class="stit">Structure recommandée du dossier BC1</div>
+  <div class="ds">
+    <div class="dr"><div class="dn">01</div><div class="dt"><strong>Page de garde</strong><em>Noms + groupe + promotion + date + "BC1 Analyse & cadrage — Reboot Museum"</em></div></div>
+    <div class="dr"><div class="dn">02</div><div class="dt"><strong>Note de positionnement du commanditaire</strong> — C1.1 + C1.2<em>PESTEL + analyse interne musée + veille benchmarks musées + recommandations. 4-5 pages.</em></div></div>
+    <div class="dr"><div class="dn">03</div><div class="dt"><strong>Note de définition des besoins client</strong> — C1.5<em>Brief reformulé, objectifs SMART, cibles, contraintes, solution attendue. 1-2 pages.</em></div></div>
+    <div class="dr"><div class="dn">04</div><div class="dt"><strong>Cahier des charges fonctionnel & technique</strong> — C1.6<em>Contexte → objectifs → périmètre → fonctionnalités → contraintes tech → livrables → budget estimatif. 4-5 pages.</em></div></div>
+    <div class="dr"><div class="dn">05</div><div class="dt"><strong>Planning des actions et ressources</strong> — C1.7<em>Gantt ou tableau des 10 phases, qui fait quoi, durées, livrables. 1-2 pages.</em></div></div>
+    <div class="dr"><div class="dn">06</div><div class="dt"><strong>Cartographie des risques</strong> — C1.4<em>Tableau risques / probabilité / impact / actions préventives. 1 page.</em></div></div>
+    <div class="dr"><div class="dn">07</div><div class="dt"><strong>Audit site existant (bonus)</strong> — C1.9<em>UX, SEO, accessibilité, recommandations. 1-2 pages. Non éliminatoire mais ajoute des points.</em></div></div>
+  </div>
+</div>
+
+<!-- BC2 -->
+<div class="pn" id="pn-b2">
+  <div class="bh"><div class="bb" style="background:var(--ambb);color:var(--amb);">BC2</div><div><div class="btit">Pilotage et gestion du projet digital</div><div class="bsub">Dossier écrit UNIQUEMENT — 19 juin · Pas de soutenance orale · Groupe · Phases PFR : 5, 7</div></div></div>
+  <div class="intro-box">BC2 évalue comment tu <strong style="color:var(--tx)">pilotes le projet en équipe</strong> : organisation, rôles, budget, réunions, management. Les CR de réunions (C2.4) et le retour d'expérience (C2.5) peuvent être rédigés sur votre travail de ces 4 jours — c'est de la documentation de vrai travail collectif.</div>
+  <div class="stit">Compétences — Grille officielle BC2</div>
+  <div class="cc el"><div class="ch"><div class="cco">C2.1<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Rôles MOA/MOE + découpage en lots + spécifications fonctionnelles</div><div class="cl">Livrable grille : Note d'affectation des rôles + découpage + specs · Cours : Phase 5 (Conduite projets)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Présenter une organisation temporelle du pilotage avec ordre des dépendances et étapes bloquantes</div></div></div><div class="tip"><strong>Reboot Museum :</strong> RACI complet (tableau : tâches en lignes, membres de votre groupe en colonnes, R/A/C/I). Découpage en sprints des 10 phases avec dépendances : Phase Activation (3) bloquée par Phase Analyse (2), etc. Spécifications fonctionnelles du nouveau dispositif digital du musée.</div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C2.2<span class="pill ok-t" style="margin-left:5px;font-size:9px;">Non élim.</span></div><div><div class="cn">Budget prévisionnel du projet</div><div class="cl">Livrable grille : Budget prévisionnel · Cours : Phase 5</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Cohérence des estimations budgétaires</div></div><div class="ci"><div class="cdot"></div><div>Clarté de présentation du budget</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Budget poste par poste : refonte site web (CMS, dev, design), production vidéo teaser, charte graphique & DA, campagnes SEA/social, outils CRM (Mailchimp/Brevo), community management (nb de jours), formation équipe musée. Mettez des fourchettes réalistes.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C2.3<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Évaluer et manager les ressources humaines, techniques et financières</div><div class="cl">Livrable grille : Écrit · Cours : Phase 5</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les compétences nécessaires sont identifiées</div></div><div class="ci"><div class="cdot"></div><div>Les ressources humaines et matérielles sont identifiées en nature et en temps de mobilisation</div></div><div class="ci"><div class="cdot"></div><div>Les moyens sont adaptés à la nature et quantité de travail</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Tableau : Profil / Compétences requises / Jours mobilisés / Rôle sur le projet. Profils : Chef de projet digital (vous), DA/Graphiste, Développeur CMS, Community Manager, Vidéaste, Chargé de comm. Ressources matérielles : Figma, CapCut, Mailchimp, Trello, équipement vidéo, serveur hébergement.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C2.4<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Conduire des réunions et diffuser l'information</div><div class="cl">Livrable grille : Comptes-rendus de réunions d'équipe · Cours : Phase 7 (Méthodes agiles)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les décisions sont clairement formulées</div></div><div class="ci"><div class="cdot"></div><div>Les personnes ou fonctions impactées sont systématiquement nommées</div></div><div class="ci"><div class="cdot"></div><div>Les échéances et indicateurs d'avancement sont définis</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Rédigez 2-3 CR de vos réunions de travail de groupe. Format : Date · Participants · Ordre du jour · Points abordés · Décisions prises (responsable) · Actions → deadline → responsable · Prochaine réunion. Rédigeable sur votre travail de ces 4 jours.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C2.5<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Générer l'engagement de l'équipe et gérer les aléas</div><div class="cl">Livrable grille : Retour d'expérience oral/écrit sur le projet · Cours : Phase 7</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les désaccords et conflits ont été dépassés</div></div><div class="ci"><div class="cdot"></div><div>Les aléas n'ont pas impacté la qualité et la quantité du travail livré</div></div></div><div class="tip"><strong>Reboot Museum :</strong> 1 page de retour d'expérience sur votre dynamique d'équipe : répartition du travail, désaccords ou difficultés rencontrées (délais serrés, divergences créatives), comment vous les avez surmontés. Montrez que la qualité a été maintenue malgré les contraintes.</div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C2.6<span class="pill ok-t" style="margin-left:5px;font-size:9px;">Non élim.</span></div><div><div class="cn">Accompagner le changement chez les utilisateurs finaux</div><div class="cl">Livrable grille : Écrit et/ou Oral</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Présentation didactique vis-à-vis du commanditaire</div></div><div class="ci"><div class="cdot"></div><div>Plus-value du produit mise en avant pour générer l'adhésion</div></div><div class="ci"><div class="cdot"></div><div>Freins psychologiques anticipés dans la présentation</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Plan d'adoption interne : comment présenter le nouveau dispositif digital aux équipes du musée (médiateurs, accueil, direction). Anticipez les freins : "Je ne sais pas utiliser les réseaux", "C'est trop compliqué". Proposez : formation, guide simplifié, ambassadeurs internes.</div></div>
+  <div class="stit">Structure recommandée du dossier BC2</div>
+  <div class="ds">
+    <div class="dr"><div class="dn">01</div><div class="dt"><strong>Page de garde</strong><em>Noms + groupe + promotion + date + "BC2 Pilotage & gestion — Reboot Museum"</em></div></div>
+    <div class="dr"><div class="dn">02</div><div class="dt"><strong>RACI + découpage en sprints + spécifications fonctionnelles</strong> — C2.1<em>Tableau RACI complet + ordre des dépendances + étapes bloquantes. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">03</div><div class="dt"><strong>Plan de ressources humaines, techniques et financières</strong> — C2.3<em>Tableau profils / compétences / jours mobilisés / outils utilisés. 1-2 pages.</em></div></div>
+    <div class="dr"><div class="dn">04</div><div class="dt"><strong>Comptes-rendus de réunions d'équipe</strong> — C2.4<em>2-3 CR réels avec date, participants, décisions, actions + responsable + deadline. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">05</div><div class="dt"><strong>Retour d'expérience équipe</strong> — C2.5<em>Dynamique d'équipe, désaccords surmontés, gestion des aléas. 1 page.</em></div></div>
+    <div class="dr"><div class="dn">06</div><div class="dt"><strong>Budget prévisionnel</strong> — C2.2<em>Tableau poste par poste chiffré. 1 page. Non éliminatoire mais valorisé.</em></div></div>
+    <div class="dr"><div class="dn">07</div><div class="dt"><strong>Accompagnement au changement (bonus)</strong> — C2.6<em>Plan d'adoption interne équipes musée. 1 page. Non éliminatoire.</em></div></div>
+  </div>
+</div>
+
+<!-- BC5 -->
+<div class="pn" id="pn-b5">
+  <div class="bh"><div class="bb" style="background:var(--telb);color:var(--tel);">BC5</div><div><div class="btit">Conception et optimisation de l'expérience client (E-business)</div><div class="bsub">Dossier écrit 26 juin + Oral 9 juillet · INDIVIDUEL · Phases PFR : 1, 3, 4, 6, 8, 9</div></div></div>
+  <div class="intro-box">BC5 est un rendu <strong style="color:var(--tx)">individuel</strong>. Tu construis toute la stratégie e-business du Musée de la Ville : benchmark, personas, plan marketing, brand content, leviers digitaux, e-mailing, KPIs. C'est la stratégie commerciale et marketing digitale complète.</div>
+  <div class="stit">Compétences — Grille officielle BC5</div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.1<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Benchmark sectoriel et analyses stratégiques</div><div class="cl">Livrable grille : Rapport de benchmark · Cours : Phase 2 (Analyse projets digitaux)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Le choix de la méthodologie (SWOT, PESTEL, PORTER, 5P…) est argumenté</div></div><div class="ci"><div class="cdot"></div><div>La méthodologie retenue est appliquée avec rigueur</div></div><div class="ci"><div class="cdot"></div><div>Les éléments couvrent le champ du projet et les résultats sont exploitables</div></div></div><div class="tip"><strong>Reboot Museum :</strong> SWOT du musée + benchmark 4-5 acteurs (musées innovants + concurrents indirects Netflix, jeux) + PESTEL sectoriel. Justifiez vos choix méthodologiques. Concluez par ce que le benchmark révèle pour la stratégie du musée.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.2<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Dashboard de visualisation des KPI</div><div class="cl">Livrable grille : Tableau de bord KPI + actions correctives · Cours : Phase 3 (Activation client)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les KPI choisis sont pertinents au regard du projet</div></div><div class="ci"><div class="cdot"></div><div>Les actions d'optimisation et résultats attendus sont explicites, argumentés, compréhensibles</div></div></div><div class="tip"><strong>Reboot Museum :</strong> KPI par canal : site web (trafic, taux de rebond, conversions billetterie), réseaux (reach, engagement rate, abonnés par plateforme), e-mailing (taux ouverture, CTR), fréquentation physique (+X% jeunes). Pour chaque KPI : valeur cible + action corrective si non atteint.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.3<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Stratégie de brand content + calendrier éditorial</div><div class="cl">Livrable grille : Note de cadrage brand content + rétro-planning · Cours : Phase 1, 8, 9</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Stratégie conçue en fonction des personas ciblés, de la concurrence et des canaux</div></div><div class="ci"><div class="cdot"></div><div>Le rétro-planning précise la nature du contenu, sa fréquence et les caractéristiques des productions</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Territoire de marque pour les 18-35 ans (ton décalé mais érudit). Calendrier éditorial 3 mois : lundi Story Instagram "coulisses", mercredi TikTok vidéo courte, vendredi Reel making-of, newsletter mensuelle. Précisez formats exacts (durée, dimensions, hashtags).</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.4<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Plan marketing opérationnel</div><div class="cl">Livrable grille : Plan marketing opérationnel · Cours : Phase 3, 6</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Le plan respecte toutes les étapes de la stratégie</div></div><div class="ci"><div class="cdot"></div><div>La période de mise en œuvre est définie et justifiée</div></div><div class="ci"><div class="cdot"></div><div>Le plan couvre tous les canaux concernés</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Plan sur 12 mois par canal : SEO, SEA (Google Ads), Social Media (TikTok, Instagram, LinkedIn), E-mailing (newsletter mensuelle + séquences auto), Influence (micro-influenceurs culturels locaux), Pass Culture, Événements (Nuit des Musées, nocturnes). Budget alloué par canal.</div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C5.5<span class="pill ok-t" style="margin-left:5px;font-size:9px;">Non élim.</span></div><div><div class="cn">Outils CRM et gestion de la relation client</div><div class="cl">Livrable grille : Note descriptive des outils CRM · Cours : Phase 3</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les outils CRM choisis sont adaptés au business modèle</div></div><div class="ci"><div class="cdot"></div><div>Les données accessibles correspondent aux besoins</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Recommandez Mailchimp ou Brevo (gratuit jusqu'à 2000 contacts) + HelloAsso pour la billetterie. Données collectées : email, âge, fréquence de visite, expositions visitées, segmentation par intérêt.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.6<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Analyse des leviers digitaux (SEA, SEO, SMO, influence, affiliation)</div><div class="cl">Livrable grille : Note d'analyse des leviers digitaux · Cours : Phase 6 (Mobile Marketing)</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Le choix des leviers est adapté au business modèle et à la cible, et argumenté</div></div><div class="ci"><div class="cdot"></div><div>Les analyses sont effectuées dans les règles de l'art</div></div><div class="ci"><div class="cdot"></div><div>Les conclusions permettent d'optimiser l'efficacité des leviers</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Analysez chaque levier : SEO (mots-clés "musée [ville] jeunes"), SEA (Google Ads événementiel), TikTok Ads (18-25 ans, fort impact/budget faible), Instagram (Stories ads, Reels), Influence (micro-influenceurs culturels locaux 5k-50k), e-mailing segmenté. Pour chaque levier : pertinence, coût estimé, ROI attendu.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.7<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Personas et parcours client</div><div class="cl">Livrable grille : Note de caractérisation des personas · Cours : Phase 3, 4</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Segmentation des cibles cohérente et argumentée</div></div><div class="ci"><div class="cdot"></div><div>Personas caractérisées en termes sociétaux, économiques, démographiques, culturels, géographiques</div></div><div class="ci"><div class="cdot"></div><div>Formalisation exploitable pour bâtir le parcours client</div></div></div><div class="tip"><strong>Reboot Museum :</strong> 2-3 personas : Léa 22 ans étudiante histoire de l'art, Paris, budget serré, TikTok/Instagram, cherche expériences instagrammables / Thomas 30 ans jeune cadre, sort peu, découvre via LinkedIn. Pour chacun : profil socio-démo, comportement numérique, motivations, freins, parcours découverte → visite → fidélisation.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.8<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Campagne d'e-mailing ciblée et segmentée</div><div class="cl">Livrable grille : Note de présentation de campagne(s) e-mailing · Cours : Phase 3</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>La ou les campagnes proposées sont cohérentes au regard des caractéristiques de chacune des cibles</div></div></div><div class="tip"><strong>Reboot Museum :</strong> 2 campagnes distinctes par segment. Campagne "Étudiants" : objet accrocheur, réduction carte étudiante, format court, CTA fort. Campagne "Jeunes actifs" : objet inspirationnel, nocturne samedi, agenda expos, ton plus posé. Pour chaque : objet, accroche, contenu, CTA, fréquence, outil, KPI.</div></div>
+  <div class="cc nel"><div class="ch"><div class="cco">C5.9<span class="pill ok-t" style="margin-left:5px;font-size:9px;">Non élim.</span></div><div><div class="cn">Ateliers de brainstorming et co-conception digitaux</div><div class="cl">Livrable grille : CR de veille + CR des ateliers de brainstorming · Cours : Phase 1</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Documentez vos ateliers de réflexion créative en groupe (même à distance). Résultats de veille fournis en amont + synthèse des axes stratégiques dégagés lors du brainstorming.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">C5.10<span class="pill elim-t" style="margin-left:5px;font-size:9px;">ÉLIM.</span></div><div><div class="cn">Analyse de la marque et de la solution digitale</div><div class="cl">Livrable grille : Note d'analyse de la marque · Cours : Phase 4</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les critères d'analyse couvrent l'ensemble des enjeux stratégiques</div></div><div class="ci"><div class="cdot"></div><div>L'analyse présente des conclusions opérationnelles</div></div><div class="ci"><div class="cdot"></div><div>Les KPI définis sont adaptés à la solution conçue</div></div></div><div class="tip"><strong>Reboot Museum :</strong> Analysez la marque : image actuelle (vieillissante, institutionnelle) vs image cible (dynamique, accessible), positionnement sémantique (mots-clés site web, ton des publications), e-réputation (avis Google, TripAdvisor, mentions presse). KPI transformation de marque : sentiment en ligne, croissance abonnés, part trafic organique.</div></div>
+  <div class="stit">Structure recommandée dossier BC5</div>
+  <div class="ds">
+    <div class="dr"><div class="dn">01</div><div class="dt"><strong>Page de garde</strong><em>Ton nom + promotion + date + "BC5 Expérience client e-business — Reboot Museum"</em></div></div>
+    <div class="dr"><div class="dn">02</div><div class="dt"><strong>Rapport benchmark & analyse stratégique</strong> — C5.1<em>SWOT + PESTEL + benchmark 4-5 acteurs + conclusions exploitables. 4-5 pages.</em></div></div>
+    <div class="dr"><div class="dn">03</div><div class="dt"><strong>Analyse de la marque & solution digitale</strong> — C5.10<em>Image actuelle vs cible, sémantique, e-réputation, KPI transformation. 2 pages.</em></div></div>
+    <div class="dr"><div class="dn">04</div><div class="dt"><strong>Personas & parcours client</strong> — C5.7<em>2-3 personas détaillés + parcours découverte → fidélisation. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">05</div><div class="dt"><strong>Stratégie brand content + calendrier éditorial</strong> — C5.3<em>Territoire de marque + rétro-planning éditorial 3 mois tous canaux. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">06</div><div class="dt"><strong>Analyse des leviers digitaux</strong> — C5.6<em>SEO, SEA, social, influence, e-mailing — pertinence + ROI estimé. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">07</div><div class="dt"><strong>Plan marketing opérationnel</strong> — C5.4<em>Actions par canal sur 12 mois + budget alloué. 2-3 pages.</em></div></div>
+    <div class="dr"><div class="dn">08</div><div class="dt"><strong>Campagnes e-mailing</strong> — C5.8<em>2 campagnes segmentées avec contenu, outil et KPI. 2 pages.</em></div></div>
+    <div class="dr"><div class="dn">09</div><div class="dt"><strong>Dashboard KPI</strong> — C5.2<em>Tableau de bord complet avec KPI par canal + actions correctives. 1-2 pages.</em></div></div>
+    <div class="dr"><div class="dn">10</div><div class="dt"><strong>Note CRM (bonus)</strong> — C5.5<em>Outils recommandés, données collectées. 1 page. Non éliminatoire.</em></div></div>
+  </div>
+</div>
+
+<!-- BC3 -->
+<div class="pn" id="pn-b3">
+  <div class="bh"><div class="bb" style="background:var(--purb);color:var(--pur);">BC3</div><div><div class="btit">Retour d'expérience professionnelle (REX)</div><div class="bsub">Rapport individuel 31 juillet + Soutenance (date TBC) · 120 pts total · Sur ton alternance/stage réel</div></div></div>
+  <div class="intro-box">Le REX n'est <strong style="color:var(--tx)">pas lié à Reboot Museum</strong> — c'est ton rapport sur ton expérience professionnelle réelle (alternance ou stage). La grille évalue la forme (25 pts) et le fond (75 pts). Chaque critère a un barème précis ci-dessous.</div>
+  <div class="stit">Grille officielle BC3 — Rapport écrit (100 pts max)</div>
+  <div class="cc el"><div class="ch"><div class="cco">FORME<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">10 pts</span></div><div><div class="cn">Présentation générale et respect des consignes</div><div class="cl">Plan, contenu, 20-30 pages, numérotation, sommaire automatique, marges, police conformes</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Respect strict des consignes de format : police Verdana 10 / Arial 11 / Calibri 12, marges 2,5cm gauche/droite, 2cm haut/bas, interlignage simple</div></div><div class="ci"><div class="cdot"></div><div>Fiche de confidentialité signée par le tuteur/maître d'apprentissage obligatoire</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FORME<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">15 pts</span></div><div><div class="cn">Expression écrite : syntaxe, vocabulaire, orthographe</div></div></div><div class="tip">15 pts en jeu — faites relire par quelqu'un. Utilisez LanguageTool ou Antidote. Les fautes impactent directement la perception de votre professionnalisme. Phrase = sujet + verbe + complément. Évitez les titres sans verbe dans les paragraphes rédigés.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">5 pts</span></div><div><div class="cn">Analyse de l'environnement interne et externe de l'organisation</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>L'analyse est complète et argumentée</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">10 pts + bonus oral</span></div><div><div class="cn">Description du périmètre d'action et positionnement dans l'organigramme</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Description précise du périmètre d'action</div></div><div class="ci"><div class="cdot"></div><div>Positionnement et interactions avec les membres de la structure clairement explicités</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">15 pts</span></div><div><div class="cn">Problématique nécessitant une solution digitale — inventaire argumenté</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les éléments constitutifs de la problématique sont inventoriés avec exhaustivité et argumentés</div></div></div><div class="tip">C'est le cœur du rapport avec la prise de recul. La problématique doit être clairement posée avec les données et constats qui la justifient. Pas un résumé de vos missions — une analyse.</div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">15 pts</span></div><div><div class="cn">Scénarios ou stratégies de communication digitale proposés</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les scénarios/stratégies sont cohérents au regard des objectifs de l'entreprise sur le projet</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">5 pts</span></div><div><div class="cn">Planning des actions de communication digitale</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Reflète la maîtrise des méthodologies en usage dans le métier</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">10 pts</span></div><div><div class="cn">Indicateurs de performance (KPI) pour la solution digitale</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>Les KPI définis sont pertinents et complets</div></div></div></div>
+  <div class="cc el"><div class="ch"><div class="cco">FOND<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">15 pts</span></div><div><div class="cn">Prise de recul sur le projet et posture professionnelle</div></div></div><div class="crit"><div class="ci"><div class="cdot"></div><div>La prise de recul est conforme à celle d'un chef de projet</div></div><div class="ci"><div class="cdot"></div><div>Le développement des compétences est explicité</div></div></div><div class="tip">15 pts — critère le plus valorisé avec la problématique. Décrivez concrètement ce que vous avez appris, comment vous avez évolué, ce que vous feriez différemment. Soyez analytique et honnête, pas descriptif.</div></div>
+  <div class="stit">Soutenance orale BC3 — 20 pts</div>
+  <div class="cc nel"><div class="ch"><div class="cco">ORAL<span class="pill" style="background:var(--blub);color:var(--blu);margin-left:5px;font-size:9px;">5+5+5+5 pts</span></div><div><div class="cn">4 critères évalués à l'oral : infos complémentaires pertinentes · Aisance et conviction · Questions traitées avec aplomb · Expression et vocabulaire professionnels</div></div></div><div class="tip">L'oral peut vous faire récupérer des points supplémentaires sur les critères du rapport (sauf ceux marqués X dans la grille). Préparez des éléments nouveaux à apporter : résultats d'un projet terminé après le rendu, enseignements supplémentaires.</div></div>
+  <div class="stit">Structure recommandée du rapport REX</div>
+  <div class="ds">
+    <div class="dr"><div class="dn">01</div><div class="dt"><strong>Page de garde + Sommaire automatique + Fiche de confidentialité signée</strong></div></div>
+    <div class="dr"><div class="dn">02</div><div class="dt"><strong>Introduction</strong> (1-2 p.)<em>Poste, missions, justification du choix, remerciements</em></div></div>
+    <div class="dr"><div class="dn">03</div><div class="dt"><strong>L'entreprise</strong> (2-3 p.)<em>Structure, organisation, environnement technique</em></div></div>
+    <div class="dr"><div class="dn">04</div><div class="dt"><strong>Missions & projets</strong> (15-20 p.)<em>Analyse approfondie de 1-2 projets majeurs : problématique, enjeux, difficultés, solutions, résultats, KPI, prise de recul</em></div></div>
+    <div class="dr"><div class="dn">05</div><div class="dt"><strong>Conclusion — Synthèse</strong> (1 p.)<em>Points marquants lisibles sans avoir lu le rapport</em></div></div>
+    <div class="dr"><div class="dn">06</div><div class="dt"><strong>Conclusion — Bilan</strong> (1-2 p.)<em>Compétences développées, savoir-être, évolution du projet professionnel</em></div></div>
+    <div class="dr"><div class="dn">07</div><div class="dt"><strong>Annexes</strong><em>Documents référencés dans le rapport</em></div></div>
+  </div>
+  <div style="background:var(--redb);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--red);margin-top:12px;"><strong>Malus :</strong> -1 point par jour de retard sur le rapport. Validation BC3 : ≥84/120 = validé · 60-83 = partiel · &lt;60 = non validé.</div>
+</div>
+
+<!-- COURS PHASES (1-10) + TABLEAU CROISÉ -->
+<div class="pn" id="pn-c1">
+  <div class="ptit">Phase 1 — Brief et Recommandations stratégiques</div>
+  <div class="psub">Matière : Brief et Recommandations stratégiques · 14h · Objectif : construire une recommandation stratégique sur la base d'un brief</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente directement le BC5 (individuel, dû le 26 juin).</strong> Il pose les bases de la stratégie marketing du musée : cibles, positionnement, objectifs SMART, ligne éditoriale.</div>
+  <div class="stit">Ce que ce cours te demande de produire</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Recommandation stratégique complète (diagnostic, positionnement, stratégie éditoriale) · CR d'atelier de brainstorming ou co-conception digitaux (Miro)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Un document écrit PDF comprenant la reco. stratégique + le CR d'atelier</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Cohérence globale · Pertinence de la proposition · Créativité de la stratégie · Réalisme des objectifs</div></div>
+    <div class="ph-row"><div class="ph-lbl">Évaluation</div><div class="ph-val">Rendu écrit (70%) + Oral si prévu (30%)</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc5">C1.5 → BC1</span>
+      <span class="comp-chip cc-bc5">C5.3 → BC5</span>
+      <span class="comp-chip cc-bc5">C5.9 → BC5</span>
+    </div>
+  </div>
+  <div class="stit">Contenu attendu détaillé</div>
+  <div class="cc el"><div class="cn" style="margin-bottom:6px;">Recommandation stratégique complète</div><div class="crit"><div class="ci"><div class="cdot"></div><div>Définir les cibles (personas 18-25 étudiants, 25-35 jeunes actifs)</div></div><div class="ci"><div class="cdot"></div><div>Construire le positionnement de la marque (Golden Circle, Brand Key)</div></div><div class="ci"><div class="cdot"></div><div>Définir les objectifs SMART (ex : +30% visiteurs 18-35 ans en 2 ans)</div></div><div class="ci"><div class="cdot"></div><div>Définir la ligne éditoriale (ton, formats, plateformes prioritaires)</div></div><div class="ci"><div class="cdot"></div><div>Élaborer et structurer le plan marketing opérationnel</div></div></div><div class="tip"><strong>Ressources du brief :</strong> Templates Golden Circle, Brand Key · Exemples : stratégie de marque du Centre Pompidou ou La Piscine (Roubaix) · Canva ou Notion pour structurer</div></div>
+  <div class="cc nel"><div class="cn" style="margin-bottom:6px;">CR d'atelier de brainstorming Miro (C5.9)</div><div class="crit"><div class="ci"><div class="cdot"></div><div>Résultats d'une veille fournis en amont du brainstorming</div></div><div class="ci"><div class="cdot"></div><div>CR de synthèse formalisant les axes stratégiques de manière explicite et argumentée</div></div></div></div>
+</div>
+
+<div class="pn" id="pn-c2">
+  <div class="ptit">Phase 2 — Analyser le marché</div>
+  <div class="psub">Matière : Analyse de projets digitaux · 21h · Objectif : comprendre les enjeux du digital dans le secteur muséal</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC1 (C1.1, C1.2) et BC5 (C5.1).</strong> C'est l'étude de marché complète du projet. Pour BC1 tu dois analyser l'environnement et faire la veille. Pour BC5 tu dois benchmarker les acteurs.</div>
+  <div class="stit">Ce que ce cours te demande de produire</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Rapport d'analyse stratégique (étude de marché : introduction, PESTEL, 5 forces de Porter, benchmark concurrentiel, cartographie des tendances digitales culturelles, SWOT) + Analyse de positionnement</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Document écrit PDF · rapport d'analyse + analyse de positionnement + conclusion</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Profondeur de l'analyse · Pertinence du diagnostic · Exploitation des données · Clarté de la synthèse · Esprit critique</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc1">C1.1 → BC1 ÉLIM.</span>
+      <span class="comp-chip cc-bc1">C1.2 → BC1 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.1 → BC5 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Données clés du brief à utiliser</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>📊 14 millions de jeunes &lt;25 ans dans les musées en 2022 (+111% vs 2021)</div>
+    <div>📊 8 millions de jeunes visiteurs musées nationaux en 2023 (+6% / an, +15% vs 2019)</div>
+    <div>📊 Seulement 35% des 30-44 ans visitent un musée/an (vs 50% des 60 ans+)</div>
+    <div>📊 14% des 18-29 ans vont au musée plus de 3 fois/an (vs 22% seniors)</div>
+    <div>📊 90% des jeunes adultes actifs sur réseaux sociaux quotidiennement</div>
+    <div>📊 128 musées ont fermé en France faute de moyens</div>
+    <div>📊 Musée en ville &lt;50k hab : ~8 000 visiteurs/an · &lt;10k hab : ~3 000 visiteurs/an</div>
+    <div>📊 Pass Culture, gratuité 18-25 ans = opportunité d'acquisition</div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>📚 "Baromètre de la fréquentation muséale" — Ministère Culture / DEPS</div>
+    <div>📚 Études "Publics & numérique" — Observatoire des publics de la culture</div>
+    <div>🔗 Sites de référence : Louvre, Musée d'Orsay, Musée des Confluences, Musée de Grenoble</div>
+    <div>🛠 Miro ou MindMeister pour carte mentale · Google Trends</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c3">
+  <div class="ptit">Phase 3 — Élaborer un plan de relation client muséal</div>
+  <div class="psub">Matière : Activation client · 21h · Objectif : acquisition, conversion, fidélisation des visiteurs</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente entièrement le BC5 (individuel, dû le 26 juin).</strong> C'est le plan d'activation marketing complet : personas, CRM, parcours client, social media, e-mailing, dashboard KPI.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Stratégie d'activation (Objectifs SMART + KPI · Personas · CRM) + Plan marketing opérationnel (Parcours utilisateur · Campagnes Social Media · Séquences e-mailing · Dashboard Dataviz KPI)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Document écrit PDF comprenant stratégie d'activation + plan marketing</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Pertinence des segmentations · Qualité du tunnel de conversion · Adéquation message/cible</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc5">C5.2→BC5 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.4→BC5 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.5→BC5</span>
+      <span class="comp-chip cc-bc5">C5.7→BC5 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.8→BC5 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>🔗 Benchmark CRM culturels : RMN-Grand Palais, HelloAsso pour musées associatifs</div>
+    <div>🛠 Templates parcours client : UXPressia, Canva Persona Builder</div>
+    <div>🛠 Outils e-mailing gratuits : Mailchimp, Brevo (ex-Sendinblue)</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c4">
+  <div class="ptit">Phase 4 — Refonte du site Web</div>
+  <div class="psub">Matière : Création de site web (CMS) · 21h · Objectif : réimaginer l'interface UX/UI du site du musée</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC1 (C1.6) et BC5 (C5.7, C5.10).</strong> Tu dois produire un audit du site existant, un cahier des charges et une maquette Figma. Le cahier des charges est une compétence éliminatoire pour BC1.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Audit technique et fonctionnel synthétique (UX, SEO, design) + Cahier des charges fonctionnel & technique + Maquette avec arborescence, zoning, wireframes statiques + Prototype fonctionnel Figma (accueil, expos, œuvre, mentions légales)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Audit PDF + CDC PDF + Présentation (arborescence + wireframes + lien Figma)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Design · Ergonomie · Respect des normes et usages UX</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc1">C1.6→BC1 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.7→BC5 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.10→BC5 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>📚 Heuristiques de Nielsen (checklist UX en 10 critères)</div>
+    <div>🛠 Figma version gratuite · UX Design Guide Figma Community</div>
+    <div>🔗 Exemples de refonte UX : Château de Versailles, Musée numérique Micro-Folie</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c5">
+  <div class="ptit">Phase 5 — Structuration du projet</div>
+  <div class="psub">Matière : Conduite de projets digitaux · 21h · Objectif : structurer la gestion du projet (outils, organisation, ressources, KPI, budget, planning, risques)</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC1 (C1.4, C1.7, C1.9) et BC2 (C2.1, C2.2, C2.3).</strong> C'est le cours le plus important pour tes deux rendus urgents du 19 juin.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable 1</div><div class="ph-val">Plan de gestion des risques (C1.4) + Plan projet avec objectifs SMART, KPI et planning détaillé (C1.7/C1.9)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Livrable 2</div><div class="ph-val">Document de gestion des ressources : RACI (C2.1) + Budget (C2.2) + Plan de management des ressources humaines, techniques et financières (C2.3)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Clarté · Faisabilité · Anticipation des risques · Cohérence ressources/planning · Réalisme des prévisions</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc1">C1.4→BC1 ÉLIM.</span>
+      <span class="comp-chip cc-bc1">C1.7→BC1 ÉLIM.</span>
+      <span class="comp-chip cc-bc1">C1.9→BC1</span>
+      <span class="comp-chip cc-bc2">C2.1→BC2 ÉLIM.</span>
+      <span class="comp-chip cc-bc2">C2.2→BC2</span>
+      <span class="comp-chip cc-bc2">C2.3→BC2 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>🛠 Gestion de projet : Gantt Project (open source), ClickUp ou Notion</div>
+    <div>🛠 Modèles : matrice RACI, feuille budget Excel (template Google Sheets)</div>
+    <div>🛠 Tableau de bord : Trello / Notion partagé</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c6">
+  <div class="ptit">Phase 6 — Stratégie Marketing Mobile</div>
+  <div class="psub">Matière : Mobile Marketing · 14h · Objectif : intégrer des canaux mobile dans la stratégie d'acquisition des 18-35 ans</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC5 (C5.4, C5.6).</strong> Il porte sur l'analyse des leviers digitaux mobile et la stratégie d'acquisition via push, app, SMS.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Analyse des leviers digitaux utilisés par le musée (C5.6) + Stratégie d'acquisition mobile avec objectif, KPI, cibles, planning, budget + campagne push/app ou SMS pour les 18-35 ans (C5.4)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Document écrit PDF comprenant l'analyse des leviers digitaux + le plan marketing d'acquisition mobile</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Cohérence de l'intégration au plan global · Efficacité attendue</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc5">C5.4→BC5 ÉLIM.</span>
+      <span class="comp-chip cc-bc5">C5.6→BC5 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>📚 Benchmarks campagnes mobiles secteur culturel : blogs We Are COM / Cultureveille</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c7">
+  <div class="ptit">Phase 7 — Organisation et gestion de projet</div>
+  <div class="psub">Matière : Méthodes & pratiques agiles · 28h · Objectif : organiser le travail d'équipe selon des méthodes agiles</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC2 (C2.4, C2.5).</strong> Les livrables Kanban, Backlog et Rétrospective agile vont directement dans votre dossier BC2 du 19 juin.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Kanban + Backlog + Rétrospective agile</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Document écrit PDF comprenant Kanban, Backlog et rétrospective agile</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Cohérence agile · Maturité organisationnelle · Maîtrise des outils utilisés</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc2">C2.4→BC2 ÉLIM.</span>
+      <span class="comp-chip cc-bc2">C2.5→BC2 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>📚 Guide SCRUM illustré (Scrum.org ou "Agile en 5 minutes")</div>
+    <div>🛠 Template tableau Kanban : Trello / Notion</div>
+    <div>🛠 Jeu de rôle "Simul'Sprint" à utiliser en atelier</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c8">
+  <div class="ptit">Phase 8 — Direction artistique et identité visuelle</div>
+  <div class="psub">Matière : Direction Artistique / Adobe et GEN AI · 28h · Objectif : définir la nouvelle identité visuelle du musée</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC5 (C5.3) et en complément BC1 (C1.6).</strong> Les livrables visuels alimentent la stratégie de brand content et le cahier des charges.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Moodboard + Charte graphique avec déclinaisons owned media (site, app mobile, e-mailing/newsletter) + Templates visuels pour campagnes acquisition mobile et social media</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">Diaporama PPT/PDF de l'identité visuelle (moodboard + éléments conceptuels pour le site + autres supports) + Diaporama PPT/PDF des templates visuels des campagnes d'acquisition</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Cohérence visuelle · Originalité · Déclinaison multisupports · Rendu écrit 70% + Oral 30%</div></div>
+    <div class="comp-chips">
+      <span class="comp-chip cc-bc1">C1.6→BC1 (complém.)</span>
+      <span class="comp-chip cc-bc5">C5.3→BC5 ÉLIM.</span>
+    </div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>🛠 Canva / Adobe Express (version gratuite)</div>
+    <div>🔗 Pinterest : moodboards muséaux ou artistiques</div>
+    <div>🤖 IA génératives : Leonardo.ai, Adobe Firefly, Dall-E</div>
+    <div>📚 Guide : "Créer une charte graphique cohérente" (Graphéine ou CreativeBloq)</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c9">
+  <div class="ptit">Phase 9 — Production vidéo de lancement</div>
+  <div class="psub">Matière : Production audiovisuelle · 14h · Objectif : produire un teaser vidéo pour le lancement d'une exposition du musée sur les plateformes sociales</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC5 (C5.3).</strong> Le teaser vidéo s'intègre dans la stratégie de brand content. Format portrait adapté Instagram Reel et TikTok.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Script + Storyboard + Vidéo teaser social media à intégrer dans le calendrier éditorial</div></div>
+    <div class="ph-row"><div class="ph-lbl">Format</div><div class="ph-val">PDF (script + storyboard + lien vidéo) + Vidéo au format portrait adapté Instagram Reel et TikTok (contraintes techniques : poids, dimensions)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Qualité technique · Force narrative · Efficacité du message · Rendu écrit 70% + Oral 30%</div></div>
+    <div class="comp-chips"><span class="comp-chip cc-bc5">C5.3→BC5 ÉLIM.</span></div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>🛠 Outils gratuits : CapCut, Canva vidéo</div>
+    <div>🎵 Banque son/image libre : Pexels, Pixabay, Incompetech</div>
+    <div>🔗 Exemples : vidéos teaser Musée des Arts Décoratifs ou Musée Soulages</div>
+  </div>
+</div>
+
+<div class="pn" id="pn-c10">
+  <div class="ptit">Phase 10 — Pitch / Argumentation commerciale</div>
+  <div class="psub">Matière : Communiquer pour convaincre · 14h · Objectif : savoir défendre son projet devant un jury / commanditaire</div>
+  <div class="intro-box"><strong style="color:var(--ac2)">Ce cours alimente BC1 (C1.8 — évalué uniquement à l'oral du 8 juillet).</strong> Il prépare la soutenance finale et le pitch vidéo de défense de la stratégie.</div>
+  <div class="card">
+    <div class="ph-row"><div class="ph-lbl">Livrable</div><div class="ph-val">Pitch vidéo (5-7 min, MP4/MOV horizontal 16:9, captation orale + slides) + Présentation PPT/PDF du pitch avec visuels clés (mockups, extrait vidéo, personas, KPI, plan d'actions)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Plan pitch</div><div class="ph-val">1. Intro équipe + contexte (30s-1min) · 2. Problématique & diagnostic (1min) · 3. Concept & positionnement (1min) · 4. Solutions proposées (2-3min) · 5. Plan de déploiement (30s-1min) · 6. Conclusion & appel à l'adhésion (30s)</div></div>
+    <div class="ph-row"><div class="ph-lbl">Critères</div><div class="ph-val">Storytelling · Structure du discours · Impact · Réactivité · Rendu écrit 30% + Oral 70%</div></div>
+    <div class="comp-chips"><span class="comp-chip cc-bc1">C1.8→BC1 oral UNIQUEMENT</span></div>
+  </div>
+  <div class="stit">Ressources recommandées par le brief</div>
+  <div class="card" style="font-size:11px;color:#bbb;line-height:1.8;">
+    <div>🛠 Templates PowerPoint pitch deck : SlidesCarnival, Pitch.com</div>
+    <div>📚 Guide "Structure d'un pitch efficace" (BPI France Création)</div>
+  </div>
+</div>
+
+<!-- TABLEAU CROISÉ -->
+<div class="pn" id="pn-cx">
+  <div class="ptit">Tableau croisé global — Phases × Blocs × Compétences</div>
+  <div class="psub">Vue synthétique de tout le projet : quelle phase produit quoi, pour quel bloc RNCP</div>
+  <div class="card" style="overflow-x:auto;">
+    <table class="xref">
+      <thead><tr><th>#</th><th>Matière (cours)</th><th>Jalon / objectif</th><th>Livrables principaux</th><th>Bloc RNCP cible</th><th>Compétences</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1</strong></td><td>Brief & Reco. stratégiques<br><em style="color:var(--mu);font-size:10px;">14h</em></td><td>Recommandations stratégiques</td><td>Reco. stratégique complète · CR brainstorming Miro</td><td><span class="comp-chip cc-bc5">BC5</span> <span class="comp-chip cc-bc1">BC1</span></td><td>C1.5 · C5.3 · C5.9</td></tr>
+        <tr><td><strong>2</strong></td><td>Analyse projets digitaux<br><em style="color:var(--mu);font-size:10px;">21h</em></td><td>Étude de marché</td><td>Rapport analyse stratégique · PESTEL · Benchmark · SWOT</td><td><span class="comp-chip cc-bc1">BC1</span> <span class="comp-chip cc-bc5">BC5</span></td><td>C1.1 · C1.2 · C5.1</td></tr>
+        <tr><td><strong>3</strong></td><td>Activation client<br><em style="color:var(--mu);font-size:10px;">21h</em></td><td>Plan relation client muséal</td><td>Stratégie activation · Personas · CRM · Plan marketing · E-mailing · Dashboard KPI</td><td><span class="comp-chip cc-bc5">BC5</span></td><td>C5.2 · C5.4 · C5.5 · C5.7 · C5.8</td></tr>
+        <tr><td><strong>4</strong></td><td>Création site web (CMS)<br><em style="color:var(--mu);font-size:10px;">21h</em></td><td>Site Web & dashboard</td><td>Audit UX · CDC fonctionnel & technique · Maquette · Prototype Figma</td><td><span class="comp-chip cc-bc1">BC1</span> <span class="comp-chip cc-bc5">BC5</span></td><td>C1.6 · C5.7 · C5.10</td></tr>
+        <tr style="background:rgba(255,92,92,.04);"><td><strong>5</strong></td><td>Conduite projets digitaux<br><em style="color:var(--mu);font-size:10px;">21h ⚡ URGENT</em></td><td>Structuration du projet</td><td>Planning · RACI · Budget · Gestion des risques · Plan ressources</td><td><span class="comp-chip cc-bc1">BC1</span> <span class="comp-chip cc-bc2">BC2</span></td><td>C1.4 · C1.7 · C1.9 · C2.1 · C2.2 · C2.3</td></tr>
+        <tr><td><strong>6</strong></td><td>Mobile Marketing<br><em style="color:var(--mu);font-size:10px;">14h</em></td><td>Stratégie Marketing Mobile</td><td>Analyse leviers digitaux · Stratégie acquisition mobile · Campagne push/SMS</td><td><span class="comp-chip cc-bc5">BC5</span></td><td>C5.4 · C5.6</td></tr>
+        <tr style="background:rgba(255,92,92,.04);"><td><strong>7</strong></td><td>Méthodes & pratiques agiles<br><em style="color:var(--mu);font-size:10px;">28h ⚡ URGENT</em></td><td>Organisation gestion projet</td><td>Kanban · Backlog · Rétrospective agile</td><td><span class="comp-chip cc-bc2">BC2</span></td><td>C2.4 · C2.5</td></tr>
+        <tr><td><strong>8</strong></td><td>Direction Artistique / GenAI<br><em style="color:var(--mu);font-size:10px;">28h</em></td><td>Direction artistique & identité</td><td>Moodboard · Charte graphique · Templates visuels campagnes</td><td><span class="comp-chip cc-bc5">BC5</span> <span class="comp-chip cc-bc1">BC1 complém.</span></td><td>C5.3 · C1.6</td></tr>
+        <tr><td><strong>9</strong></td><td>Production audiovisuelle<br><em style="color:var(--mu);font-size:10px;">14h</em></td><td>Production vidéo de lancement</td><td>Script · Storyboard · Vidéo teaser (portrait, Instagram/TikTok)</td><td><span class="comp-chip cc-bc5">BC5</span></td><td>C5.3</td></tr>
+        <tr><td><strong>10</strong></td><td>Communiquer pour convaincre<br><em style="color:var(--mu);font-size:10px;">14h</em></td><td>Pitch / Argumentation</td><td>Pitch vidéo (5-7min) · Présentation PPT pitch complet</td><td><span class="comp-chip cc-bc1">BC1 oral</span></td><td>C1.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="stit">Légende des codes couleur</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;">
+    <div style="display:flex;align-items:center;gap:6px;"><span class="comp-chip cc-bc1">C1.x</span> Compétence → Bloc 1 (Analyse & cadrage)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span class="comp-chip cc-bc2">C2.x</span> Compétence → Bloc 2 (Pilotage)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><span class="comp-chip cc-bc5">C5.x</span> Compétence → Bloc 5 (E-business)</div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="cpn on" id="pn-chat" style="">
+  <div class="cm" id="msgs">
+    <div class="msg"><div class="av ai">IA</div><div class="mb">Bonjour ! Je suis ton assistant EEMI — je connais <strong>toutes les grilles d'évaluation</strong> (BC1, BC2, BC5, BC3 REX), le <strong>brief Reboot Museum complet</strong> et les <strong>10 phases du cours</strong>.<br><br>Pose-moi n'importe quelle question : contenu d'un livrable, compétences éliminatoires, comment structurer un document, exemples concrets pour le musée, lien entre un cours et un bloc RNCP...<br><br><em>Exemples : "Quelle phase du cours alimente le BC2 ?" · "Comment rédiger mon RACI ?" · "Donne-moi un exemple de KPI pour BC5" · "Les élim. du BC1 ?"</em></div></div>
+  </div>
+  <div class="cia">
+    <div class="qrow" id="qrow">
+      <button class="qb" onclick="sq('Quelle phase du cours alimente le BC2 ?')">Phase → BC2 ?</button>
+      <button class="qb" onclick="sq('Comment structurer mon dossier BC1 ?')">Structure BC1</button>
+      <button class="qb" onclick="sq('Donne-moi les compétences éliminatoires du BC1')">Élim. BC1</button>
+      <button class="qb" onclick="sq('Comment faire mon RACI pour BC2 ?')">RACI BC2</button>
+      <button class="qb" onclick="sq('Qu\'est-ce qu\'un persona pour BC5 et comment le rédiger ?')">Personas BC5</button>
+      <button class="qb" onclick="sq('Donne-moi un exemple de dashboard KPI pour le musée')">KPI dashboard</button>
+      <button class="qb" onclick="sq('Comment réussir l\'oral BC1 du 8 juillet ?')">Oral BC1</button>
+      <button class="qb" onclick="sq('Quels livrables du PFR vont dans le BC5 ?')">Cours → BC5</button>
+    </div>
+    <div class="irow">
+      <textarea class="ci2" id="inp" placeholder="Pose ta question sur les blocs, les cours, les livrables, les compétences RNCP..." rows="1" onkeydown="hk(event)" oninput="ar(this)"></textarea>
+      <button class="sb2" id="sbtn" onclick="send()">Envoyer ↗</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ONBOARDING + USER STORAGE
+function onboard(){
+  var name=document.getElementById('ob-name').value.trim();
+  var email=document.getElementById('ob-email').value.trim();
+  if(!name){document.getElementById('ob-name').style.borderColor='#ff5c5c';document.getElementById('ob-name').focus();return;}
+  try{localStorage.setItem('eemi_name',name);if(email)localStorage.setItem('eemi_email',email);}catch(e){}
+  applyUser(name);
+  document.getElementById('ob').style.display='none';
+  setWelcome(name);
+}
+function skipOnboard(){
+  document.getElementById('ob').style.display='none';
+  setWelcome('');
+}
+function applyUser(name){
+  var n=name||'';
+  try{n=n||localStorage.getItem('eemi_name')||'';}catch(e){}
+  document.getElementById('user-initial').textContent=n?n[0].toUpperCase():'?';
+  document.getElementById('user-label').textContent=n||'Utilisateur';
+}
+function resetUser(){
+  if(confirm('Modifier ton profil ?')){
+    try{document.getElementById('ob-name').value=localStorage.getItem('eemi_name')||'';
+    document.getElementById('ob-email').value=localStorage.getItem('eemi_email')||'';}catch(e){}
+    document.getElementById('ob').style.display='flex';
+  }
+}
+function setWelcome(name){
+  var g=name?'Bonjour <strong>'+name+'&nbsp;!</strong> ':'';
+  var els=document.querySelectorAll('#pn-chat .msg .mb');
+  if(els.length>0){
+    els[0].innerHTML=g+'Je suis ton assistant EEMI &mdash; je connais <strong>toutes les grilles d'évaluation</strong> (BC1, BC2, BC5, BC3), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, <strong>le cours exact où tu l'as vue</strong> et ce qu'il faut produire.<br><br>Utilise la sidebar pour naviguer entre les blocs et les phases de cours. Ici, pose-moi directement tes questions &mdash; exemples :<br>&bull; <em>"Dans quel cours j'ai vu C1.6 ?"</em><br>&bull; <em>"Comment rédiger mon RACI pour BC2 ?"</em><br>&bull; <em>"Donne-moi des exemples concrets de personas pour le musée"</em><br><br><strong style="color:#ff5c5c">Urgence : BC1 + BC2 à rendre dans 4 jours (19 juin 23h59) !</strong>';
+  }
+}
+window.addEventListener('load',function(){
+  var name='';
+  try{name=localStorage.getItem('eemi_name')||'';}catch(e){}
+  if(name){
+    applyUser(name);
+    document.getElementById('ob').style.display='none';
+    setWelcome(name);
+  }
+});
+
+function go(el,id){
+  document.querySelectorAll('.pn,.cpn').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('on'));
+  document.getElementById('pn-'+id).classList.add('on');
+  el.classList.add('on');
+}
+function ar(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function hk(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function sq(q){document.getElementById('inp').value=q;send();}
+
+const getSYS=()=>`Tu es un assistant expert pour des étudiants EEMI Bachelor 3 Marketing & Communication qui préparent le Titre RNCP Chef de Projets Digitaux (RNCP35541), projet fil rouge "Reboot Museum".
+
+CONTEXTE PROJET : Le "Musée de la Ville" souffre d'un manque de visibilité auprès des 18-35 ans. Image vieillissante, site obsolète. Mission : refonte stratégique et digitale complète (analyse environnement, stratégie communication digitale, refonte UX/UI site, production contenus engageants, plan activation CRM/brand content/SEA/influence/mobile marketing).
+
+DONNÉES CLÉS DU BRIEF :
+- 14 millions de jeunes <25 ans dans les musées en 2022 (+111% vs 2021)
+- 8 millions de jeunes visiteurs musées nationaux 2023 (+6%/an, +15% vs 2019)
+- Seulement 35% des 30-44 ans visitent un musée/an (vs 50% des 60+)
+- 14% des 18-29 ans vont au musée plus de 3 fois/an (vs 22% seniors)
+- 90% des jeunes adultes actifs sur réseaux sociaux quotidiennement
+- 128 musées ont fermé en France faute de moyens
+- Musée ville <50k hab : ~8 000 visiteurs/an
+- Pass Culture et gratuité 18-25 ans = opportunités d'acquisition
+
+DEADLINES (aujourd'hui = 15 juin 2026) :
+- BC1 + BC2 : dossier écrit 19 JUIN 23h59 (4 jours!) — groupe — DigiformaCertif
+- Oral BC1 : 8 juillet à 14h (20min présentation + 15min Q&R)
+- BC5 : dossier écrit 26 JUIN 23h59 (11 jours) — INDIVIDUEL
+- Oral BC5 : 9 juillet à 16h (20min + 10min Q&R)
+- BC3 REX : 31 juillet (individuel, rapport + soutenance, sur expérience professionnelle réelle)
+
+10 PHASES DU COURS (PFR Reboot Museum) ET LEUR CORRESPONDANCE RNCP :
+- Phase 1 (Brief & Recommandations stratégiques, 14h) → C1.5 (BC1), C5.3 (BC5 ÉLIM.), C5.9 (BC5)
+- Phase 2 (Analyse projets digitaux, 21h) → C1.1 (BC1 ÉLIM.), C1.2 (BC1 ÉLIM.), C5.1 (BC5 ÉLIM.)
+- Phase 3 (Activation client, 21h) → C5.2 (BC5 ÉLIM.), C5.4 (BC5 ÉLIM.), C5.5 (BC5), C5.7 (BC5 ÉLIM.), C5.8 (BC5 ÉLIM.)
+- Phase 4 (Création site web CMS, 21h) → C1.6 (BC1 ÉLIM.), C5.7 (BC5 ÉLIM.), C5.10 (BC5 ÉLIM.)
+- Phase 5 (Conduite projets digitaux, 21h) → C1.4 (BC1 ÉLIM.), C1.7 (BC1 ÉLIM.), C1.9 (BC1), C2.1 (BC2 ÉLIM.), C2.2 (BC2), C2.3 (BC2 ÉLIM.)
+- Phase 6 (Mobile Marketing, 14h) → C5.4 (BC5 ÉLIM.), C5.6 (BC5 ÉLIM.)
+- Phase 7 (Méthodes & pratiques agiles, 28h) → C2.4 (BC2 ÉLIM.), C2.5 (BC2 ÉLIM.)
+- Phase 8 (Direction Artistique / GenAI, 28h) → C5.3 (BC5 ÉLIM.), C1.6 complémentaire (BC1)
+- Phase 9 (Production audiovisuelle, 14h) → C5.3 (BC5 ÉLIM.)
+- Phase 10 (Communiquer pour convaincre, 14h) → C1.8 (BC1 ORAL UNIQUEMENT — pas dans le dossier du 19 juin)
+
+GRILLES D'ÉVALUATION OFFICIELLES :
+
+BC1 — ÉLIMINATOIRES (obligatoires, absence = bloc invalide) :
+C1.1 : Critère grille = "L'analyse des tendances du marché est argumentée". Livrable = Note de positionnement du commanditaire.
+C1.2 : Critères = synthèse de veille + recommandations concrètes adaptées. Livrable = Note de positionnement (même doc C1.1).
+C1.4 : Critères = analyse des risques + actions préventives. Livrable = Cartographie des risques.
+C1.5 : Critère = besoins et attentes clients clairement identifiés. Livrable = Note de définition des besoins.
+C1.6 : Critère = cahier des charges avec l'ensemble des specs fonctionnelles ET techniques. Livrable = Cahier des charges.
+C1.7 : Critères = répartition cohérente des tâches/contributeurs + estimation cohérente des ressources. Livrable = Planning + inventaire livrables.
+NON ÉLIM. BC1 : C1.8 (oral uniquement, 8 juillet), C1.9 (audit prototype, bonus).
+
+BC2 — ÉLIMINATOIRES :
+C2.1 : Critère = "Savoir présenter une organisation temporelle du pilotage avec ordre des dépendances, étapes bloquantes". Livrable = Note affectation rôles + découpage lots + spécifications fonctionnelles.
+C2.3 : Critères = compétences identifiées + ressources humaines/matérielles en nature et temps + moyens adaptés. Livrable = Écrit.
+C2.4 : Critères = décisions clairement formulées + personnes nommées + échéances et indicateurs définis. Livrable = CR de réunions.
+C2.5 : Critères = désaccords dépassés + aléas sans impact sur la qualité. Livrable = retour d'expérience.
+NON ÉLIM. BC2 : C2.2 (budget, cohérence estimations), C2.6 (accompagnement changement).
+
+BC5 — ÉLIMINATOIRES (rendu INDIVIDUEL) :
+C5.1 : Critères = choix méthodologie argumenté + rigueur d'application + couverture du champ + résultats exploitables. Livrable = Rapport de benchmark.
+C5.2 : Critères = KPI pertinents + actions correctives explicites et argumentées. Livrable = Tableau de bord KPI.
+C5.3 : Critères = stratégie en fonction des personas + rétro-planning avec nature, fréquence et caractéristiques des productions. Livrable = Note cadrage brand content + rétro-planning.
+C5.4 : Critères = toutes les étapes respectées + période définie et justifiée + tous les canaux couverts. Livrable = Plan marketing opérationnel.
+C5.6 : Critères = choix leviers adapté et argumenté + analyses dans les règles de l'art + conclusions permettant d'optimiser. Livrable = Note d'analyse des leviers digitaux.
+C5.7 : Critères = segmentation cohérente et argumentée + personas caractérisées sociétalement/économiquement/démographiquement/culturellement/géographiquement + exploitable pour parcours client. Livrable = Note de caractérisation des personas.
+C5.8 : Critère = cohérence des campagnes avec les caractéristiques de chaque cible. Livrable = Note de présentation campagne(s) e-mailing.
+C5.10 : Critères = critères couvrant tous les enjeux stratégiques + conclusions opérationnelles + KPI adaptés. Livrable = Note d'analyse de la marque/solution digitale.
+NON ÉLIM. BC5 : C5.5 (CRM, outils adaptés), C5.9 (brainstorming, CR ateliers).
+
+BC3 REX — Rapport individuel (100 pts) + Soutenance (20 pts) = 120 pts :
+Barèmes rapport : Présentation/consignes (10pts) · Expression écrite (15pts) · Analyse environnement (5pts) · Périmètre d'action (10pts, bonus oral possible) · Problématique digitale (15pts) · Scénarios/stratégies (15pts) · Planning actions (5pts) · KPI (10pts) · Prise de recul (15pts).
+Soutenance (20pts) : Infos complémentaires (5pts) · Aisance et conviction (5pts) · Questions traitées avec aplomb (5pts) · Expression professionnelle (5pts).
+Malus : -1 point par jour de retard. Validation BC3 : ≥84/120 validé · 60-83 partiel · <60 non validé.
+
+INSTRUCTIONS : Réponds en français, de façon claire, structurée et concrète. Ancre toujours les réponses dans le contexte Reboot Museum. Cite les critères exacts de la grille. Signale les compétences éliminatoires. Donne des exemples applicables au musée fictif. Rappelle les deadlines quand c'est urgent.`;
+
+let hist=[];
+
+async function send(){
+  const inp=document.getElementById('inp');
+  const btn=document.getElementById('sbtn');
+  const q=inp.value.trim();
+  if(!q)return;
+  inp.value='';inp.style.height='auto';btn.disabled=true;
+  document.getElementById('qrow').style.display='none';
+  addMsg('user',q);
+  const te=addTyping();
+  hist.push({role:'user',content:q});
+  try{
+    const r=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:getSYS(),messages:hist})
+    });
+    const d=await r.json();
+    const rep=d.content?.[0]?.text||'Erreur de réponse.';
+    hist.push({role:'assistant',content:rep});
+    te.remove();addMsg('ai',rep);
+  }catch(e){te.remove();addMsg('ai','❌ Erreur de connexion. Réessaie.');}
+  btn.disabled=false;inp.focus();
+}
+
+function addMsg(role,txt){
+  const c=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg'+(role==='user'?' u':'');
+  const av=role==='ai'?'<div class="av ai">IA</div>':'<div class="av me">Moi</div>';
+  const f=txt
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg);padding:1px 5px;border-radius:3px;font-size:11px;font-family:var(--mo);">$1</code>')
+    .replace(/^### (.+)/gm,'<strong style="color:var(--ac2);display:block;margin:8px 0 3px;">$1</strong>')
+    .replace(/^## (.+)/gm,'<strong style="font-size:13px;display:block;margin:10px 0 4px;">$1</strong>')
+    .replace(/^- (.+)/gm,'<div style="display:flex;gap:5px;margin:2px 0;"><span style="color:var(--ac);margin-top:3px;font-size:10px;">●</span><span>$1</span></div>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+  d.innerHTML=av+'<div class="mb">'+f+'</div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;return d;
+}
+
+function addTyping(){
+  const c=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg';
+  d.innerHTML='<div class="av ai">IA</div><div class="mb"><div class="typing"><span></span><span></span><span></span></div></div>';
+  c.appendChild(d);c.scrollTop=c.scrollHeight;return d;
+}
+</script>
+</body>
+</html>
