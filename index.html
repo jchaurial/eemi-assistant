@@ -876,7 +876,7 @@ async function send(){
   const te=addTyping();
   hist.push({role:'user',content:q});
   try{
-    const r=await fetch('/api/chat',{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:getSYS(),messages:hist})
