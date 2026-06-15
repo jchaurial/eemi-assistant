@@ -201,26 +201,32 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;l
 </head>
 <body>
 
-<div class="ob" id="ob">
-  <div class="ob-box">
-    <div class="ob-logo">EEMI <span>Assistant</span></div>
-    <div class="ob-tag">🔴 BC1 + BC2 dans 4 jours — 19 juin 23h59</div>
-    <div class="ob-title">Bienvenue dans ton assistant Reboot Museum</div>
-    <div class="ob-desc">
-      Je connais <strong>toutes les grilles d'évaluation</strong> (BC1, BC2, BC5, BC3 REX), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, le <strong>cours exact où tu l'as vue</strong> et ce que tu dois produire.<br><br>
-      Entre ton prénom et ton mail pour que je me souvienne de toi entre les sessions.
+<div id="ob" style="position:fixed;inset:0;background:#0b0b10;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Inter,system-ui,sans-serif;">
+  <div style="text-align:center;max-width:480px;padding:40px 32px;">
+    <div style="font-size:32px;font-weight:800;color:#b0a4ff;letter-spacing:-1px;margin-bottom:6px;">EEMI Assistant</div>
+    <div style="font-size:13px;color:#7878a0;margin-bottom:28px;">Reboot Museum · Chef de Projets Digitaux RNCP35541</div>
+    <div style="background:#161620;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px 28px 24px;margin-bottom:24px;">
+      <div style="font-size:15px;font-weight:700;color:#eeeef5;margin-bottom:10px;">Ton assistant pour les blocs RNCP</div>
+      <div style="font-size:12px;color:#8080a8;line-height:1.8;margin-bottom:20px;">
+        Grilles d'évaluation BC1, BC2, BC5, BC3 · Brief Reboot Museum complet · 10 phases de cours croisées avec les compétences RNCP · Chat IA pour toutes tes questions.
+      </div>
+      <div style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:8px;padding:10px 14px;font-size:11px;color:#ff5c5c;font-weight:600;margin-bottom:20px;">
+        🔴 BC1 + BC2 à rendre dans 4 jours — 19 juin 23h59
+      </div>
+      <button onclick="document.getElementById('ob').style.display='none'" style="width:100%;background:#7c6ff7;border:none;border-radius:10px;padding:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.01em;">
+        Accéder à l'assistant →
+      </button>
     </div>
-    <input class="ob-inp" id="ob-name" placeholder="Ton prénom" type="text" autocomplete="given-name" />
-    <input class="ob-inp" id="ob-email" placeholder="Ton adresse email (optionnel)" type="email" autocomplete="email" />
-    <button class="ob-btn" onclick="onboard()">Commencer →</button>
-    <span class="ob-skip" onclick="skipOnboard()">Passer cette étape</span>
+    <div style="font-size:10px;color:#3a3a55;line-height:1.8;">
+      Conçu par <span style="color:#7878a0;font-weight:600;">Jonas</span> avec le concours de <span style="color:#7878a0;font-weight:600;">Claude</span> (Anthropic), <span style="color:#7878a0;font-weight:600;">GitHub</span> &amp; <span style="color:#7878a0;font-weight:600;">Vercel</span>
+    </div>
   </div>
 </div>
 
 
+
 <div class="top">
   <div class="logo">EEMI <span>/ Reboot Museum — Chef de Projets Digitaux RNCP35541</span></div>
-  <div class="user-chip" id="user-chip" onclick="resetUser()" title="Cliquer pour modifier"><div class="user-dot" id="user-initial">?</div><span id="user-label">Utilisateur</span></div>
   <div class="dl-chip"><div class="blink"></div>BC1 + BC2 : 4 jours — 19 juin 23h59</div>
 </div>
 
@@ -741,50 +747,10 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;l
 
 <script>
 const API_KEY='REMPLACE_PAR_TA_CLE_API';
-// ONBOARDING + USER STORAGE
-function onboard(){
-  var name=document.getElementById('ob-name').value.trim();
-  var email=document.getElementById('ob-email').value.trim();
-  if(!name){document.getElementById('ob-name').style.borderColor='#ff5c5c';document.getElementById('ob-name').focus();return;}
-  try{localStorage.setItem('eemi_name',name);if(email)localStorage.setItem('eemi_email',email);}catch(e){}
-  applyUser(name);
-  document.getElementById('ob').style.display='none';
-  setWelcome(name);
-}
-function skipOnboard(){
-  document.getElementById('ob').style.display='none';
-  setWelcome('');
-}
-function applyUser(name){
-  var n=name||'';
-  try{n=n||localStorage.getItem('eemi_name')||'';}catch(e){}
-  document.getElementById('user-initial').textContent=n?n[0].toUpperCase():'?';
-  document.getElementById('user-label').textContent=n||'Utilisateur';
-}
-function resetUser(){
-  if(confirm('Modifier ton profil ?')){
-    try{document.getElementById('ob-name').value=localStorage.getItem('eemi_name')||'';
-    document.getElementById('ob-email').value=localStorage.getItem('eemi_email')||'';}catch(e){}
-    document.getElementById('ob').style.display='flex';
-  }
-}
-function setWelcome(name){
-  var g=name?'Bonjour <strong>'+name+' !</strong> ':'';
-  var els=document.querySelectorAll('#pn-chat .msg .mb');
-  if(els.length>0){
-    els[0].innerHTML=g+'Je suis ton assistant EEMI — je connais <strong>toutes les grilles d&#39;évaluation</strong> (BC1, BC2, BC5, BC3), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, <strong>le cours exact où tu l&#39;as vue</strong> et ce qu&#39;il faut produire.<br><br>Utilise la sidebar pour naviguer entre les blocs et les phases de cours. Ici, pose-moi directement tes questions :<br>• <em>Dans quel cours j&#39;ai vu C1.6 ?</em><br>• <em>Comment rédiger mon RACI pour BC2 ?</em><br>• <em>Donne-moi des exemples concrets de personas pour le musée</em><br><br><strong style="color:#ff5c5c">Urgence : BC1 + BC2 à rendre dans 4 jours (19 juin 23h59) !</strong>';
-  }
-}
 
-window.addEventListener('load',function(){
-  var name='';
-  try{name=localStorage.getItem('eemi_name')||'';}catch(e){}
-  if(name){
-    applyUser(name);
-    document.getElementById('ob').style.display='none';
-    setWelcome(name);
-  }
-});
+function setWelcome(name){}
+
+
 
 function go(el,id){
   document.querySelectorAll('.pn,.cpn').forEach(p=>p.classList.remove('on'));
