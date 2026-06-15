@@ -19,8 +19,8 @@
   --fn:'Inter',system-ui,sans-serif; --mo:'JetBrains Mono','Fira Code',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;line-height:1.6;display:flex;flex-direction:column;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;line-height:1.6;display:flex;flex-direction:column;overflow:hidden;}
 
 /* TOPBAR */
 .top{height:48px;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:10;}
@@ -174,8 +174,8 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;l
 .mb li{margin:2px 0;}
 
 /* ONBOARDING */
-.ob{position:fixed;inset:0;background:rgba(11,11,16,.97);z-index:1000;display:flex;align-items:center;justify-content:center;}
-.ob-box{background:#161620;border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:36px 40px;max-width:460px;width:90%;text-align:center;}
+.ob{position:fixed;inset:0;background:rgba(11,11,16,.97);z-index:99999!important;display:flex;align-items:center;justify-content:center;overflow:auto;}
+.ob-box{pointer-events:all;background:#161620;border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:36px 40px;max-width:460px;width:90%;text-align:center;}
 .ob-logo{font-size:26px;font-weight:800;color:#b0a4ff;letter-spacing:-.5px;margin-bottom:4px;}
 .ob-logo span{color:#7878a0;font-weight:400;font-size:15px;}
 .ob-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,92,92,.12);color:#ff5c5c;border-radius:20px;padding:3px 10px;margin:8px 0 18px;}
@@ -740,6 +740,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);font-size:13px;l
 </div><!-- /layout -->
 
 <script>
+const API_KEY='REMPLACE_PAR_TA_CLE_API';
 // ONBOARDING + USER STORAGE
 function onboard(){
   var name=document.getElementById('ob-name').value.trim();
@@ -768,12 +769,13 @@ function resetUser(){
   }
 }
 function setWelcome(name){
-  var g=name?'Bonjour <strong>'+name+'&nbsp;!</strong> ':'';
+  var g=name?'Bonjour <strong>'+name+' !</strong> ':'';
   var els=document.querySelectorAll('#pn-chat .msg .mb');
   if(els.length>0){
-    els[0].innerHTML=g+'Je suis ton assistant EEMI &mdash; je connais <strong>toutes les grilles d'évaluation</strong> (BC1, BC2, BC5, BC3), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, <strong>le cours exact où tu l'as vue</strong> et ce qu'il faut produire.<br><br>Utilise la sidebar pour naviguer entre les blocs et les phases de cours. Ici, pose-moi directement tes questions &mdash; exemples :<br>&bull; <em>"Dans quel cours j'ai vu C1.6 ?"</em><br>&bull; <em>"Comment rédiger mon RACI pour BC2 ?"</em><br>&bull; <em>"Donne-moi des exemples concrets de personas pour le musée"</em><br><br><strong style="color:#ff5c5c">Urgence : BC1 + BC2 à rendre dans 4 jours (19 juin 23h59) !</strong>';
+    els[0].innerHTML=g+'Je suis ton assistant EEMI — je connais <strong>toutes les grilles d&#39;évaluation</strong> (BC1, BC2, BC5, BC3), le <strong>brief Reboot Museum complet</strong> et pour chaque compétence RNCP, <strong>le cours exact où tu l&#39;as vue</strong> et ce qu&#39;il faut produire.<br><br>Utilise la sidebar pour naviguer entre les blocs et les phases de cours. Ici, pose-moi directement tes questions :<br>• <em>Dans quel cours j&#39;ai vu C1.6 ?</em><br>• <em>Comment rédiger mon RACI pour BC2 ?</em><br>• <em>Donne-moi des exemples concrets de personas pour le musée</em><br><br><strong style="color:#ff5c5c">Urgence : BC1 + BC2 à rendre dans 4 jours (19 juin 23h59) !</strong>';
   }
 }
+
 window.addEventListener('load',function(){
   var name='';
   try{name=localStorage.getItem('eemi_name')||'';}catch(e){}
@@ -878,7 +880,7 @@ async function send(){
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':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,'anthropic-version':'2023-06-01'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:getSYS(),messages:hist})
     });
     const d=await r.json();
